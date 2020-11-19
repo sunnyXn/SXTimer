@@ -13,12 +13,18 @@
 - (void)scheduledTimerWithTimeInterval:(NSTimeInterval)interval fireDate:(NSDate *)date block:(void (^)(dispatch_source_t timer))block {
     
     dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    //dispatch_queue_create("com.dispatchqueue.queue", DISPATCH_QUEUE_SERIAL);
+    dispatch_set_target_queue(queue, dispatch_get_main_queue());
     dispatch_source_t sourceTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
-    dispatch_source_set_timer(sourceTimer, [self.class wallTimeWithDate:date], interval * NSEC_PER_SEC, 0);
+    dispatch_source_set_timer(sourceTimer, [self.class wallTimeWithDate:date], interval * NSEC_PER_SEC, 0.0 * NSEC_PER_SEC);
     
     dispatch_source_set_event_handler(sourceTimer, ^{
-        if (block) {
-            block(sourceTimer);
+        @synchronized (self) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (block) {
+                    block(sourceTimer);
+                }
+            });
         }
     });
     
